@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Currency Converter (INR ↔ Any)</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #f2f5ff, #dce9ff);
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh; margin: 0;
+    }
+    .box {
+      background: white; padding: 20px; border-radius: 16px;
+      width: 360px; max-width: 94%;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+    h2 { margin-top: 0; text-align: center; }
+    label { font-size: 13px; color: #333; margin-top: 10px; display: block; }
+    input, select, button {
+      width: 100%; padding: 10px; margin-top: 6px; font-size: 15px;
+      border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box;
+    }
+    .row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+    .row select { flex: 1; }
+    .swap-btn {
+      background: #edf3ff; border: none; padding: 8px 10px; border-radius: 8px; cursor: pointer;
+      font-size: 18px; transition: 0.3s;
+    }
+    .swap-btn:hover { background: #d8e3ff; }
+    button.convert {
+      background: #0066ff; color: white; border: none; cursor: pointer;
+      font-weight: 600; margin-top: 10px;
+    }
+    .convert:hover { background: #0052cc; }
+    .result {
+      margin-top: 14px; padding: 12px; background: #f5f8ff;
+      border-radius: 8px; text-align: center; font-weight: 600;
+    }
+    footer { text-align: center; font-size: 12px; color: #666; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>🌍 Currency Converter</h2>
+    <label>Amount</label>
+    <input id="amount" type="number" value="1" min="0" step="any">
+
+    <div class="row">
+      <div>
+        <label>From</label>
+        <select id="from"></select>
+      </div>
+      <button class="swap-btn" id="swap">⇄</button>
+      <div>
+        <label>To</label>
+        <select id="to"></select>
+      </div>
+    </div>
+
+    <button class="convert" id="convertBtn">Convert</button>
+
+    <div class="result" id="result">Enter amount and click Convert</div>
+    <footer>Powered by open.er-api.com</footer>
+  </div>
+
+  <script>
+    const amountEl = document.getElementById("amount");
+    const fromEl = document.getElementById("from");
+    const toEl = document.getElementById("to");
+    const convertBtn = document.getElementById("convertBtn");
+    const swapBtn = document.getElementById("swap");
+    const resultEl = document.getElementById("result");
+
+    // ✅ Simple list of currencies (works without API key)
+    const currencies = {
+      "INR": "Indian Rupee",
+      "USD": "US Dollar",
+      "EUR": "Euro",
+      "GBP": "British Pound",
+      "JPY": "Japanese Yen",
+      "AUD": "Australian Dollar",
+      "CAD": "Canadian Dollar",
+      "CNY": "Chinese Yuan",
+      "SAR": "Saudi Riyal",
+      "AED": "UAE Dirham"
+    };
+
+    // Load dropdowns
+    function loadCurrencies() {
+      const codes = Object.keys(currencies);
+      codes.forEach(code => {
+        const opt1 = document.createElement("option");
+        const opt2 = document.createElement("option");
+        opt1.value = opt2.value = code;
+        opt1.textContent = opt2.textContent = `${code} — ${currencies[code]}`;
+        fromEl.appendChild(opt1);
+        toEl.appendChild(opt2);
+      });
+      fromEl.value = "INR";
+      toEl.value = "USD";
+    }
+
+    // Convert using open.er-api.com
+    async function convert() {
+      const amount = parseFloat(amountEl.value);
+      const from = fromEl.value;
+      const to = toEl.value;
+      if (!amount || amount <= 0) return alert("Enter a valid amount");
+
+      resultEl.textContent = "Converting...";
+      try {
+        const url = `https://open.er-api.com/v6/latest/${from}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!data.rates || !data.rates[to]) throw new Error("Conversion failed");
+
+        const rate = data.rates[to];
+        const result = amount * rate;
+
+        resultEl.innerHTML = `${amount} ${from} = <b>${result.toFixed(2)} ${to}</b>`;
+      } catch (err) {
+        console.error(err);
+        resultEl.textContent = "Error fetching rate. Please check internet.";
+      }
+    }
+
+    // Swap
+    swapBtn.addEventListener("click", () => {
+      const temp = fromEl.value;
+      fromEl.value = toEl.value;
+      toEl.value = temp;
+      convert();
+    });
+
+    convertBtn.addEventListener("click", convert);
+    amountEl.addEventListener("keydown", e => { if (e.key === "Enter") convert(); });
+
+    loadCurrencies();
+  </script>
+</body>
+</html>
